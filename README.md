@@ -37,9 +37,19 @@ it came from. everything lives on your own disk. no account, no cloud, no upload
 
 ## why i built it
 
-<!-- Laurence — your story goes here. two paragraphs. -->
+<!-- draft in your voice — rewrite this until it sounds like you -->
 
-_(placeholder — i'll write this myself)_
+i come back from every trip with a camera roll full of the same kinds of things:
+a wall, a doorway, a stack of tiles, the exact orange of a café sign. references.
+the problem was never taking them — it was everything after. they'd sit in my phone,
+unsorted and unnamed, and by the time i wanted one i couldn't find it. pinterest felt
+like someone else's feed; a folder of photos felt like a junk drawer.
+
+so i built the tool i actually wanted: drop a photo in and it gets a name, a palette,
+and the materials it's made of, then files itself by the trip it came from — no tagging,
+no accounts, nothing leaving my laptop. it started in antwerp during design week, where
+i was photographing more than i could keep track of, and grew from there. this is that
+tool, opened up so anyone can run their own.
 
 ## setup
 
@@ -108,9 +118,15 @@ field-notes/
 
 ## what i'd do next
 
-<!-- Laurence — future ideas go here -->
+<!-- draft — swap in your own ideas -->
 
-_(placeholder — i'll fill this in)_
+a running list, roughly in order of how much i want them:
+
+- make it work beyond macOS (it currently leans on the built-in `sips`/`mdls`)
+- group by material or colour across trips, not just by location
+- a "palette from a whole trip" view — the dominant colours of antwerp vs tokyo
+- export a trip as a single shareable page or PDF, not only a printed zine
+- let two photos sit side by side to compare materials directly
 
 ## credits
 
