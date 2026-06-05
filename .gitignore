@@ -1,0 +1,35 @@
+# ── secrets ──────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── your personal library (kept local, not published) ────────────────────────
+# The repo ships a small demo set in ./samples and seeds from it on first run.
+# Your own photos + metadata stay on your machine.
+/library/
+/library.json
+/library.json.bak
+
+# ── server scratch (auto-generated, auto-deleted) ────────────────────────────
+.cache/
+
+# ── local editor / tool config ───────────────────────────────────────────────
+.claude/settings.local.json
+
+# ── node ─────────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tgz
+.npm
+
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# ── logs ─────────────────────────────────────────────────────────────────────
+*.log

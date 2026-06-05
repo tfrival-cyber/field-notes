@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Notes</title>
+<link rel="icon" type="image/png" href="/icons/favicon-32.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-180.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Field Notes">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+  :root{
+    --bg:#FFFFFF;--ink:#1A1A1A;--ink-2:#444444;--gray:#666666;--line:#E5E5E5;
+    --serif:'EB Garamond','Times New Roman',Georgia,serif;
+    --sans:'Inter',system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);}
+  body{font-family:var(--serif);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  .wrap{max-width:1200px;margin:0 auto;padding:72px 72px 120px;}
+
+  header.brand{margin-bottom:48px;}
+  .brand h1{font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:.01em;margin:0;line-height:1;color:var(--ink);}
+  .brand .subtitle{font-family:var(--sans);font-size:12px;font-weight:400;text-transform:lowercase;letter-spacing:.08em;color:var(--gray);margin-top:8px;}
+
+  .dropzone{border:1px solid var(--line);padding:56px 40px;text-align:center;margin-bottom:64px;cursor:pointer;transition:border-color .2s ease,background .2s ease;}
+  .dropzone.drag{border-color:var(--ink);background:#FAFAFA;}
+  .dropzone .dz-label{font-family:var(--sans);font-size:12px;text-transform:lowercase;letter-spacing:.06em;color:var(--gray);}
+  .dropzone .dz-rule{width:64px;height:1px;background:var(--line);margin:18px auto 0;}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:30px;}
+  .card{border:1px solid var(--line);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;overflow:hidden;animation:fadein .5s ease both;}
+  @keyframes fadein{from{opacity:0;}to{opacity:1;}}
+  .card .thumb{width:100%;aspect-ratio:4/3;background:#FAFAFA;overflow:hidden;display:block;}
+  .card .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+  .card .divider{height:1px;background:var(--line);width:100%;}
+  .card .meta{padding:18px 18px 16px;display:flex;flex-direction:column;gap:7px;flex:1;}
+  .card .ref-name{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--ink);line-height:1.2;}
+  .card .ref-desc{font-family:var(--serif);font-size:14.5px;line-height:1.45;color:var(--ink-2);margin:0;}
+  .card .ref-bottom{margin-top:auto;padding-top:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;}
+  .tag-line{font-family:var(--sans);font-size:10.5px;text-transform:lowercase;letter-spacing:.06em;color:var(--gray);}
+  .swatches{display:flex;gap:6px;flex-shrink:0;}
+  .swatch{width:17px;height:17px;border:1px solid var(--line);}
+  .looking{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--gray);}
+  .card.error .meta{gap:6px;}
+  .err-text{font-family:var(--sans);font-size:11px;letter-spacing:.04em;color:#9a4b3f;text-transform:lowercase;}
+  .retry{font-family:var(--sans);font-size:11px;letter-spacing:.04em;color:var(--gray);text-decoration:underline;cursor:pointer;align-self:flex-start;}
+
+  .overlay{position:fixed;inset:0;background:rgba(26,26,26,.28);display:none;align-items:flex-start;justify-content:center;padding:64px 24px;overflow:auto;z-index:50;}
+  .overlay.open{display:flex;animation:fadein .2s ease both;}
+  .modal{background:var(--bg);border:1px solid var(--line);max-width:880px;width:100%;display:grid;grid-template-columns:1.2fr 1fr;}
+  .modal .m-img{background:#FAFAFA;border-right:1px solid var(--line);display:flex;align-items:center;justify-content:center;}
+  .modal .m-img img{width:100%;height:100%;max-height:620px;object-fit:contain;display:block;}
+  .modal .m-body{padding:36px 36px 32px;display:flex;flex-direction:column;gap:20px;}
+  .m-name{font-family:var(--serif);font-style:italic;font-size:26px;line-height:1.15;color:var(--ink);margin:0;outline:none;}
+  .m-desc{font-family:var(--serif);font-size:16px;line-height:1.5;color:var(--ink-2);margin:0;outline:none;}
+  .m-row{border-top:1px solid var(--line);padding-top:16px;}
+  .m-label{font-family:var(--sans);font-size:10px;text-transform:lowercase;letter-spacing:.1em;color:var(--gray);margin-bottom:8px;}
+  .m-val{font-family:var(--sans);font-size:13px;letter-spacing:.02em;color:var(--ink);text-transform:lowercase;}
+  .m-swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+  .m-sw{width:22px;height:22px;border:1px solid var(--line);}
+  .m-sw-hex{font-family:var(--sans);font-size:10px;color:var(--gray);letter-spacing:.04em;}
+  .m-mats{font-family:var(--sans);font-size:13px;color:var(--ink);text-transform:lowercase;letter-spacing:.02em;}
+  .m-actions{margin-top:auto;padding-top:20px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
+  .btn{font-family:var(--sans);font-size:12px;letter-spacing:.04em;text-transform:lowercase;background:none;border:none;padding:0;cursor:pointer;color:var(--ink);}
+  .btn:hover{color:var(--gray);}
+  .btn.danger{color:#9a4b3f;}
+  .btn-line{border:1px solid var(--ink);padding:9px 16px;}
+  .btn-line:hover{background:var(--ink);color:var(--bg);}
+  .editing .m-name,.editing .m-desc{border-bottom:1px dashed var(--line);}
+  .res-note{font-family:var(--sans);font-size:10px;color:var(--gray);letter-spacing:.04em;text-transform:lowercase;}
+
+  .empty-note{font-family:var(--sans);font-size:12px;color:var(--gray);letter-spacing:.03em;text-align:center;padding:8px 0;}
+
+  /* search */
+  .searchbar{margin:-40px 0 36px;display:flex;align-items:center;gap:12px;}
+  .searchbar input{flex:1;font-family:var(--sans);font-size:13px;letter-spacing:.02em;color:var(--ink);background:none;border:none;border-bottom:1px solid var(--line);padding:8px 2px;outline:none;transition:border-color .15s ease;}
+  .searchbar input:focus{border-bottom-color:var(--ink);}
+  .searchbar input::placeholder{color:#A8A8A8;text-transform:lowercase;letter-spacing:.04em;}
+  .search-clear{font-family:var(--sans);font-size:16px;line-height:1;color:#A8A8A8;cursor:pointer;padding:0 4px;user-select:none;}
+  .search-clear:hover{color:var(--ink);}
+
+  /* folders / trips */
+  .folders{display:flex;flex-wrap:wrap;align-items:baseline;gap:7px 16px;margin:0 0 36px;padding-bottom:18px;border-bottom:1px solid var(--line);}
+  .folders:empty{display:none;}
+  .folders-label{font-family:var(--sans);font-size:9.5px;text-transform:lowercase;letter-spacing:.14em;color:#A8A8A8;width:64px;flex-shrink:0;}
+  .fold{font-family:var(--sans);font-size:12px;text-transform:lowercase;letter-spacing:.03em;color:var(--gray);cursor:pointer;transition:color .15s ease;}
+  .fold:hover{color:var(--ink);}
+  .fold.active{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;}
+  .fold .fc{color:#C4C4C4;font-size:10px;margin-left:3px;}
+  .fold.drop-target{color:var(--ink);outline:1px dashed var(--ink);outline-offset:4px;}
+  .folders-hint{font-family:var(--serif);font-style:italic;font-size:13px;color:#A8A8A8;}
+
+  /* modal trip row */
+  .m-trip-input{font-family:var(--sans);font-size:13px;letter-spacing:.02em;color:var(--ink);background:none;border:none;border-bottom:1px dashed var(--line);padding:4px 2px;outline:none;width:100%;max-width:240px;text-transform:lowercase;}
+  .m-trip-input:focus{border-bottom-color:var(--ink);border-bottom-style:solid;}
+  .m-trip-input::placeholder{color:#A8A8A8;}
+
+  .filters{display:flex;flex-direction:column;gap:11px;margin:-28px 0 44px;}
+  .filters:empty{display:none;}
+  .facet{display:flex;align-items:baseline;gap:18px;}
+  .facet-label{font-family:var(--sans);font-size:9.5px;text-transform:lowercase;letter-spacing:.14em;color:#A8A8A8;width:64px;flex-shrink:0;}
+  .facet-values{display:flex;flex-wrap:wrap;gap:13px;align-items:center;}
+  .fval{font-family:var(--sans);font-size:11.5px;text-transform:lowercase;letter-spacing:.04em;color:var(--gray);cursor:pointer;transition:color .15s ease;}
+  .fval:hover{color:var(--ink);}
+  .fval.active{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;}
+  .cval{width:15px;height:15px;border:1px solid var(--line);cursor:pointer;}
+  .cval.active{outline:1px solid var(--ink);outline-offset:2px;}
+  .filters-meta{display:flex;justify-content:space-between;align-items:baseline;gap:18px;margin-top:5px;padding-top:13px;border-top:1px solid var(--line);}
+  .count{font-family:var(--sans);font-size:10px;letter-spacing:.06em;color:#A8A8A8;text-transform:lowercase;}
+  .clear-link{font-family:var(--sans);font-size:10px;letter-spacing:.06em;color:var(--gray);text-transform:lowercase;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .clear-link:hover{color:var(--ink);}
+  input[type=file]{display:none;}
+
+  /* make-a-zine entry button */
+  header.brand{position:relative;}
+  .zine-start{position:absolute;right:0;top:6px;font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;text-transform:lowercase;color:var(--gray);background:none;border:1px solid var(--line);padding:8px 14px;cursor:pointer;transition:border-color .15s ease,color .15s ease;}
+  .zine-start:hover{border-color:var(--ink);color:var(--ink);}
+  body.selecting .zine-start{display:none;}
+
+  /* select mode */
+  body.selecting .dropzone{display:none;}
+  .card.selected{outline:2px solid var(--ink);outline-offset:-1px;}
+  .card .selmark{position:absolute;top:10px;left:10px;width:22px;height:22px;border-radius:50%;background:var(--ink);color:#fff;align-items:center;justify-content:center;font-family:var(--sans);font-size:12px;z-index:2;display:none;}
+  body.selecting .card.selected .selmark{display:flex;}
+  body.selecting .card{cursor:default;}
+
+  /* sticky selection toolbar */
+  .zine-toolbar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--ink);padding:14px 24px;display:none;align-items:center;gap:16px;justify-content:center;flex-wrap:wrap;z-index:60;}
+  body.selecting .zine-toolbar{display:flex;}
+  body.selecting .wrap{padding-bottom:150px;}
+  .zt-title{font-family:var(--serif);font-style:italic;font-size:16px;border:none;border-bottom:1px solid var(--line);padding:6px 2px;outline:none;background:none;min-width:170px;color:var(--ink);}
+  .zt-title:focus{border-bottom-color:var(--ink);}
+  .zt-count{font-family:var(--sans);font-size:11px;letter-spacing:.04em;color:var(--gray);text-transform:lowercase;min-width:84px;}
+  .zt-count.warn{color:#9a4b3f;}
+  .zt-link{font-family:var(--sans);font-size:11.5px;letter-spacing:.04em;color:var(--gray);text-transform:lowercase;cursor:pointer;text-decoration:underline;text-underline-offset:2px;}
+  .zt-link:hover{color:var(--ink);}
+  .zt-create{font-family:var(--sans);font-size:12px;text-transform:lowercase;letter-spacing:.04em;border:1px solid var(--ink);padding:9px 16px;cursor:pointer;background:none;color:var(--ink);}
+  .zt-create:hover{background:var(--ink);color:var(--bg);}
+  .zt-create:disabled{opacity:.4;cursor:default;}
+  .zt-create:disabled:hover{background:none;color:var(--ink);}
+  .zt-fmt{display:inline-flex;gap:12px;border-left:1px solid var(--line);border-right:1px solid var(--line);padding:0 14px;}
+  .zf{font-family:var(--sans);font-size:11.5px;text-transform:lowercase;letter-spacing:.04em;color:var(--gray);cursor:pointer;transition:color .15s ease;}
+  .zf:hover{color:var(--ink);}
+  .zf.active{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px;}
+  .zt-check{font-family:var(--sans);font-size:11px;letter-spacing:.04em;color:var(--gray);text-transform:lowercase;display:inline-flex;align-items:center;gap:5px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="brand">
+    <h1>Field Notes</h1>
+    <div class="subtitle">a reference notebook for designers</div>
+    <button class="zine-start" id="zineStart">make a zine →</button>
+  </header>
+
+  <div class="dropzone" id="dropzone">
+    <div class="dz-label">drop your references here</div>
+    <div class="dz-rule"></div>
+  </div>
+
+  <div class="searchbar" id="searchbar">
+    <input type="text" id="search" placeholder="search references…" autocomplete="off" spellcheck="false">
+    <span class="search-clear" id="searchClear" style="display:none;" title="clear">×</span>
+  </div>
+  <div class="folders" id="folders"></div>
+  <div class="filters" id="filters"></div>
+  <div class="empty-note" id="emptyNote" style="display:none;">nothing collected yet</div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.heic,.heif" multiple>
+
+<div class="zine-toolbar" id="zineToolbar">
+  <span class="zt-count" id="ztCount">0 selected</span>
+  <span class="zt-link" id="ztAll">select all shown</span>
+  <span class="zt-link" id="ztClear">clear</span>
+  <span class="zt-fmt" id="ztFmt">
+    <span class="zf active" data-fmt="pages">pages</span>
+    <span class="zf" data-fmt="mini">mini-zine</span>
+    <span class="zf" data-fmt="booklet">booklet</span>
+  </span>
+  <input class="zt-title" id="ztTitle" placeholder="cover title…" autocomplete="off" spellcheck="false">
+  <label class="zt-check"><input type="checkbox" id="ztNums" checked> page #s</label>
+  <button class="zt-create" id="ztCreate" disabled>create zine →</button>
+  <span class="zt-link" id="ztCancel">cancel</span>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal">
+    <div class="m-img"><img id="mImg" alt=""></div>
+    <div class="m-body">
+      <h2 class="m-name" id="mName"></h2>
+      <p class="m-desc" id="mDesc"></p>
+      <div class="m-row">
+        <div class="m-label">trip / location</div>
+        <input class="m-trip-input" id="mTrip" list="tripList" placeholder="add to a trip…" autocomplete="off" spellcheck="false">
+        <datalist id="tripList"></datalist>
+      </div>
+      <div class="m-row"><div class="m-label">date</div><div class="m-val" id="mDate"></div></div>
+      <div class="m-row"><div class="m-label">category · mood</div><div class="m-val" id="mCatMood"></div></div>
+      <div class="m-row"><div class="m-label">palette</div><div class="m-swatches" id="mSwatches"></div></div>
+      <div class="m-row"><div class="m-label">materials</div><div class="m-mats" id="mMats"></div></div>
+      <div class="m-actions" id="mActions"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+const grid = document.getElementById("grid");
+const emptyNote = document.getElementById("emptyNote");
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("fileInput");
+
+let items = [];        // in-memory mirror of the library
+const pending = {};    // id -> original dataURL, kept only until save succeeds (for retry)
+let dragIds = [];      // card ids currently being dragged onto a trip
+let draggingCards = false;
+
+// Serve a downscaled copy at the size we actually display (w), not the multi-MP original.
+function imgSrc(it, w){ return it.file ? ("/library-print/" + it.file + (w ? ("?w=" + w) : "")) : it.dataURL; }
+
+const MONTHS=["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+function fmtDate(iso, withYear){
+  const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(iso||""); if(!m) return "";
+  return MONTHS[+m[2]-1]+" "+(+m[3])+(withYear?", "+m[1]:"");
+}
+
+/* ---------- color families (for filtering by color) ---------- */
+function hexToHsl(hex){
+  let h = (hex||"").replace("#",""); if(h.length===3) h = h.split("").map(c=>c+c).join("");
+  if(h.length<6) return {h:0,s:0,l:0.5};
+  const r=parseInt(h.slice(0,2),16)/255, g=parseInt(h.slice(2,4),16)/255, b=parseInt(h.slice(4,6),16)/255;
+  const max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min; let H=0,S=0,L=(max+min)/2;
+  if(d!==0){
+    S = L>0.5 ? d/(2-max-min) : d/(max+min);
+    if(max===r) H=((g-b)/d)%6; else if(max===g) H=(b-r)/d+2; else H=(r-g)/d+4;
+    H*=60; if(H<0) H+=360;
+  }
+  return {h:H,s:S,l:L};
+}
+function colorFamily(hex){
+  const {h,s,l}=hexToHsl(hex);
+  if(l>=0.9 && s<0.18) return "white";
+  if(l<=0.13) return "black";
+  if(s<0.12) return "gray";
+  if(h<15 || h>=345) return l<0.32 ? "brown" : "red";
+  if(h<45) return l<0.5 ? "brown" : "orange";
+  if(h<70) return "yellow";
+  if(h<165) return "green";
+  if(h<255) return "blue";
+  if(h<290) return "purple";
+  return "pink";
+}
+const FAMILY_ORDER=["red","orange","brown","yellow","green","blue","purple","pink","gray","black","white"];
+const FAMILY_SWATCH={red:"#B0413E",orange:"#D08A3E",brown:"#7A5A3A",yellow:"#CDB94A",green:"#6E8E5A",blue:"#4A6B8A",purple:"#6E5A8E",pink:"#B06A8E",gray:"#9A958C",black:"#2A2A2A",white:"#ECECEC"};
+
+/* ---------- filter + sort state ---------- */
+const CAT_ORDER=["object","material","space","type","texture","detail"];
+const MOOD_ORDER=["bold","quiet","warm","sharp","textured","weird"];
+const filters={ category:new Set(), mood:new Set(), material:new Set(), color:new Set() };
+let sortMode="new"; // "new" | "az"
+let searchQuery="";
+let activeFolder=null;            // null = all; "\x00unsorted" = items with no trip; else a trip name
+const UNSORTED="\x00unsorted";
+
+function matches(it){
+  if(activeFolder!==null){
+    const f=(it.folder||"").trim();
+    if(activeFolder===UNSORTED){ if(f) return false; }
+    else if(f!==activeFolder) return false;
+  }
+  if(searchQuery){
+    const hay=[it.name,it.description,it.category,it.mood,it.folder,...(it.materials||[]),...(it.colors||[])].join(" ").toLowerCase();
+    if(!hay.includes(searchQuery)) return false;
+  }
+  if(filters.category.size && !filters.category.has(it.category)) return false;
+  if(filters.mood.size && !filters.mood.has(it.mood)) return false;
+  if(filters.material.size){
+    const mats=(it.materials||[]).map(m=>(""+m).toLowerCase());
+    if(![...filters.material].some(m=>mats.includes(m))) return false;
+  }
+  if(filters.color.size){
+    const fams=new Set((it.colors||[]).map(colorFamily));
+    if(![...filters.color].some(f=>fams.has(f))) return false;
+  }
+  return true;
+}
+function activeCount(){ return filters.category.size+filters.mood.size+filters.material.size+filters.color.size; }
+
+/* ---------- helpers ---------- */
+function blobToDataURL(blob){
+  return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>rej(new Error("read failed")); r.readAsDataURL(blob); });
+}
+
+/* ---------- server calls ---------- */
+// Send the original file to the server, which converts (HEIC→JPEG via sips),
+// downscales a copy for analysis, runs Claude, persists, and returns the record.
+async function apiAdd(id, dataURL, filename){
+  const r = await fetch("/api/add",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id,dataURL,filename})});
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error || ("add " + r.status));
+  return j;
+}
+async function apiEdit(id,fields){
+  await fetch("/api/item",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({id,...fields})});
+}
+async function apiDelete(id){
+  await fetch("/api/item?id=" + encodeURIComponent(id),{method:"DELETE"});
+}
+
+/* ---------- render ---------- */
+function render(){
+  renderFolders();
+  renderFilters();
+  let list = items.slice();
+  if(sortMode==="az") list.sort((a,b)=>(a.name||"~").localeCompare(b.name||"~"));
+  else if(sortMode==="loc") list.sort((a,b)=>{
+    const fa=(a.folder||"").trim().toLowerCase(), fb=(b.folder||"").trim().toLowerCase();
+    if(!fa!==!fb) return fa?-1:1;                  // images with no trip sink to the bottom
+    if(fa!==fb) return fa.localeCompare(fb);        // group by location, A→Z
+    return (a.date||"").localeCompare(b.date||""); // within a location, oldest → newest
+  });
+  // in-progress cards (looking/error) always show; only ready cards obey filters
+  list = list.filter(it => it.status!=="ready" || matches(it));
+  grid.innerHTML = "";
+  emptyNote.style.display = items.length ? "none" : "block";
+  list.forEach(it => grid.appendChild(cardEl(it)));
+}
+
+function clearDropTargets(){ document.querySelectorAll(".fold.drop-target").forEach(f=>f.classList.remove("drop-target")); }
+// Move the given cards into a trip ("" = unsorted). Optimistic: update + render, then persist.
+async function assignTrip(ids, folder){
+  ids=(ids||[]).slice();
+  if(!ids.length) return;
+  ids.forEach(id=>{ const it=items.find(x=>x.id===id); if(it) it.folder=folder; selectedIds.delete(id); });
+  if(selecting) updateZineCount();
+  render();
+  await Promise.all(ids.map(id=>apiEdit(id,{folder})));
+}
+function folderList(){
+  const counts={};
+  items.filter(it=>it.status==="ready").forEach(it=>{
+    const f=(it.folder||"").trim();
+    if(f) counts[f]=(counts[f]||0)+1;
+  });
+  return Object.keys(counts).sort((a,b)=>a.localeCompare(b)).map(name=>({name,count:counts[name]}));
+}
+function renderFolders(){
+  const host=document.getElementById("folders");
+  const ready=items.filter(it=>it.status==="ready");
+  // hide the whole bar only when the library is empty
+  if(!ready.length){ host.innerHTML=""; if(activeFolder!==null) activeFolder=null; return; }
+
+  const folders=folderList();
+  const unsorted=ready.filter(it=>!(it.folder||"").trim()).length;
+
+  // if the active trip just emptied (e.g. dragged its last card away), fall back to "all"
+  if(activeFolder && activeFolder!==UNSORTED && !folders.some(f=>f.name===activeFolder)) activeFolder=null;
+  if(activeFolder===UNSORTED && !unsorted) activeFolder=null;
+
+  host.innerHTML="";
+  const lab=document.createElement("div"); lab.className="folders-label"; lab.textContent="trips"; host.appendChild(lab);
+
+  // no trips yet → show a hint so the feature is discoverable
+  if(!folders.length){
+    if(activeFolder!==null) activeFolder=null;
+    const hint=document.createElement("div"); hint.className="folders-hint";
+    hint.textContent="open a reference to file it under a trip";
+    host.appendChild(hint);
+    return;
+  }
+
+  const mkFold=(label,count,key)=>{
+    const el=document.createElement("div");
+    el.className="fold"+(activeFolder===key?" active":"");
+    el.textContent=label;
+    if(count!=null){ const c=document.createElement("span"); c.className="fc"; c.textContent=count; el.appendChild(c); }
+    el.addEventListener("click",()=>{ activeFolder = (activeFolder===key?null:key); render(); });
+    // drop target: "all" (key null) isn't a real trip; every other fold accepts dropped cards
+    if(key!==null){
+      el.addEventListener("dragover", e=>{ if(!draggingCards) return; e.preventDefault(); e.dataTransfer.dropEffect="move"; el.classList.add("drop-target"); });
+      el.addEventListener("dragleave", ()=>el.classList.remove("drop-target"));
+      el.addEventListener("drop", e=>{ if(!draggingCards) return; e.preventDefault(); e.stopPropagation(); el.classList.remove("drop-target"); assignTrip(dragIds, key===UNSORTED?"":key); });
+    }
+    return el;
+  };
+  host.appendChild(mkFold("all", ready.length, null));
+  folders.forEach(f=>host.appendChild(mkFold(f.name, f.count, f.name)));
+  if(unsorted) host.appendChild(mkFold("unsorted", unsorted, UNSORTED));
+}
+function renderFilters(){
+  const host = document.getElementById("filters");
+  const ready = items.filter(it=>it.status==="ready");
+  if(!ready.length){ host.innerHTML=""; return; }
+
+  const cat=new Set(), mood=new Set(), mat=new Set(), col=new Set();
+  ready.forEach(it=>{
+    if(it.category) cat.add(it.category);
+    if(it.mood) mood.add(it.mood);
+    (it.materials||[]).forEach(m=>mat.add((""+m).toLowerCase()));
+    (it.colors||[]).forEach(c=>col.add(colorFamily(c)));
+  });
+
+  host.innerHTML="";
+  const textVal=(v,group)=>{
+    const el=document.createElement("div");
+    el.className="fval"+(filters[group].has(v)?" active":"");
+    el.textContent=v;
+    el.addEventListener("click",()=>{ filters[group].has(v)?filters[group].delete(v):filters[group].add(v); render(); });
+    return el;
+  };
+  const colorValEl=(v)=>{
+    const el=document.createElement("div");
+    el.className="cval"+(filters.color.has(v)?" active":"");
+    el.style.background=FAMILY_SWATCH[v]||"#ccc"; el.title=v;
+    el.addEventListener("click",()=>{ filters.color.has(v)?filters.color.delete(v):filters.color.add(v); render(); });
+    return el;
+  };
+  const addFacet=(label, values, builder)=>{
+    if(!values.length) return;
+    const row=document.createElement("div"); row.className="facet";
+    const lab=document.createElement("div"); lab.className="facet-label"; lab.textContent=label;
+    const vals=document.createElement("div"); vals.className="facet-values";
+    values.forEach(v=>vals.appendChild(builder(v)));
+    row.appendChild(lab); row.appendChild(vals); host.appendChild(row);
+  };
+
+  addFacet("category", CAT_ORDER.filter(c=>cat.has(c)), v=>textVal(v,"category"));
+  addFacet("mood",     MOOD_ORDER.filter(m=>mood.has(m)), v=>textVal(v,"mood"));
+  addFacet("material", [...mat].sort(), v=>textVal(v,"material"));
+  addFacet("color",    FAMILY_ORDER.filter(f=>col.has(f)), colorValEl);
+
+  // sort row
+  const sortRow=document.createElement("div"); sortRow.className="facet";
+  const sl=document.createElement("div"); sl.className="facet-label"; sl.textContent="sort";
+  const sv=document.createElement("div"); sv.className="facet-values";
+  [["new","newest"],["az","a–z"],["loc","location"]].forEach(([mode,txt])=>{
+    const el=document.createElement("div"); el.className="fval"+(sortMode===mode?" active":""); el.textContent=txt;
+    el.addEventListener("click",()=>{ sortMode=mode; render(); }); sv.appendChild(el);
+  });
+  sortRow.appendChild(sl); sortRow.appendChild(sv); host.appendChild(sortRow);
+
+  // meta line: counts + clear
+  const active=activeCount();
+  const shown=ready.filter(matches).length;
+  const meta=document.createElement("div"); meta.className="filters-meta";
+  const count=document.createElement("div"); count.className="count";
+  count.textContent = ready.length + " reference" + (ready.length===1?"":"s") + (active? " · " + shown + " shown" : "");
+  meta.appendChild(count);
+  if(active){
+    const clr=document.createElement("div"); clr.className="clear-link"; clr.textContent="clear filters";
+    clr.addEventListener("click",()=>{ Object.values(filters).forEach(s=>s.clear()); render(); });
+    meta.appendChild(clr);
+  }
+  host.appendChild(meta);
+}
+function cardEl(it){
+  const card = document.createElement("div");
+  card.className = "card" + (it.status==="error" ? " error" : "") + (selectedIds.has(it.id) ? " selected" : "");
+  card.dataset.id = it.id;
+
+  const mark = document.createElement("div"); mark.className="selmark"; mark.textContent="✓"; card.appendChild(mark);
+
+  // drag a card (or the whole selection) onto a trip in the trips bar to file it there
+  card.draggable = (it.status === "ready");
+  card.addEventListener("dragstart", e=>{
+    dragIds = (selectedIds.size && selectedIds.has(it.id)) ? [...selectedIds] : [it.id];
+    draggingCards = true;
+    try{ e.dataTransfer.effectAllowed="move"; e.dataTransfer.setData("text/plain", dragIds.join(",")); }catch(_){}
+  });
+  card.addEventListener("dragend", ()=>{ draggingCards=false; dragIds=[]; clearDropTargets(); });
+
+  const thumb = document.createElement("div"); thumb.className="thumb";
+  const img = document.createElement("img"); img.src = imgSrc(it, 800); img.alt = it.name || "reference"; img.draggable = false;
+  thumb.appendChild(img); card.appendChild(thumb);
+
+  const div = document.createElement("div"); div.className="divider"; card.appendChild(div);
+
+  const meta = document.createElement("div"); meta.className="meta";
+  if(it.status === "looking"){
+    const l = document.createElement("div"); l.className="looking"; l.textContent="looking…"; meta.appendChild(l);
+  } else if(it.status === "error"){
+    const e = document.createElement("div"); e.className="err-text"; e.textContent = it.error || "couldn't read this one";
+    const r = document.createElement("div"); r.className="retry"; r.textContent="try again";
+    r.addEventListener("click", ev=>{ ev.stopPropagation(); retry(it.id); });
+    meta.appendChild(e); meta.appendChild(r);
+  } else {
+    const name = document.createElement("div"); name.className="ref-name"; name.textContent=it.name;
+    const desc = document.createElement("p"); desc.className="ref-desc"; desc.textContent=it.description;
+    const bottom = document.createElement("div"); bottom.className="ref-bottom";
+    const d = fmtDate(it.date,false);
+    const tag = document.createElement("div"); tag.className="tag-line"; tag.textContent = it.category + " · " + it.mood + (d ? " · " + d : "");
+    const sw = document.createElement("div"); sw.className="swatches";
+    (it.colors||[]).slice(0,4).forEach(c=>{ const s=document.createElement("div"); s.className="swatch"; s.style.background=c; sw.appendChild(s); });
+    bottom.appendChild(tag); bottom.appendChild(sw);
+    meta.appendChild(name); meta.appendChild(desc); meta.appendChild(bottom);
+  }
+  card.appendChild(meta);
+  card.addEventListener("click", ()=>{
+    if(it.status!=="ready") return;
+    if(selecting) toggleSelect(it.id, card);
+    else openModal(it.id);
+  });
+  return card;
+}
+function refreshCard(id){
+  const old = grid.querySelector('.card[data-id="'+id+'"]');
+  const it = items.find(x=>x.id===id);
+  if(old && it) old.replaceWith(cardEl(it));
+}
+
+/* ---------- ingest ---------- */
+async function ingest(files){
+  const list = Array.from(files).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+  for(const file of list){
+    const id = "fn_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    const item = { id, file:null, dataURL:"", filename:file.name, status:"looking", name:"", description:"", category:"", mood:"", colors:[], materials:[] };
+    items.unshift(item); render();
+    try{
+      const original = await blobToDataURL(file);   // raw original bytes, any format
+      // Safari (macOS) can render HEIC natively, so show it immediately while we work
+      item.dataURL = original; refreshCard(id);
+      pending[id] = original;
+      const rec = await apiAdd(id, original, file.name);  // convert + downscale + analyze + save
+      Object.assign(item, rec);
+      item.dataURL = "";                            // disk serves the converted original now
+      delete pending[id];
+      item.status = "ready";
+    }catch(err){
+      item.status = "error";
+      item.error = (err && err.message) ? err.message.toLowerCase().slice(0,70) : "couldn't read this one";
+    }
+    render();
+  }
+}
+async function retry(id){
+  const it = items.find(x=>x.id===id);
+  if(!it) return;
+  const original = pending[id] || it.dataURL;
+  if(!original){ it.error = "reload and re-drop this one"; refreshCard(id); return; }
+  it.status="looking"; it.error=""; it.dataURL = original; refreshCard(id);
+  try{
+    const rec = await apiAdd(id, original, it.filename || "image.jpg");
+    Object.assign(it, rec); it.dataURL=""; delete pending[id]; it.status="ready";
+  }catch(err){
+    it.status="error"; it.error=(err&&err.message)?err.message.toLowerCase().slice(0,70):"couldn't read this one";
+  }
+  render();
+}
+
+/* ---------- drop / click ---------- */
+dropzone.addEventListener("click", ()=>fileInput.click());
+fileInput.addEventListener("change", e=>{ ingest(e.target.files); fileInput.value=""; });
+["dragenter","dragover"].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault(); if(draggingCards) return; dropzone.classList.add("drag");}));
+["dragleave","drop"].forEach(ev=>dropzone.addEventListener(ev,e=>{e.preventDefault();if(ev!=="dragover")dropzone.classList.remove("drag");}));
+dropzone.addEventListener("drop", e=>{ e.preventDefault(); e.stopPropagation(); dropzone.classList.remove("drag"); if(e.dataTransfer&&e.dataTransfer.files.length) ingest(e.dataTransfer.files); });
+window.addEventListener("dragover", e=>e.preventDefault());
+// fallback for drops outside the dropzone; the dropzone handles its own (and stops bubbling)
+window.addEventListener("drop", e=>{ if(e.target.closest(".overlay")||e.target.closest("#dropzone")) return; e.preventDefault(); if(e.dataTransfer&&e.dataTransfer.files.length) ingest(e.dataTransfer.files); });
+
+/* ---------- modal ---------- */
+const overlay = document.getElementById("overlay");
+let activeId=null, editing=false;
+function openModal(id){ activeId=id; editing=false; paintModal(); overlay.classList.add("open"); }
+function closeModal(){ overlay.classList.remove("open"); activeId=null; editing=false; }
+
+function paintModal(){
+  const it = items.find(x=>x.id===activeId); if(!it) return;
+  document.getElementById("mImg").src = imgSrc(it, 1600);
+  document.getElementById("modal").classList.toggle("editing", editing);
+  const nameEl=document.getElementById("mName"), descEl=document.getElementById("mDesc");
+  nameEl.contentEditable=editing; descEl.contentEditable=editing;
+  nameEl.textContent=it.name; descEl.textContent=it.description;
+  document.getElementById("mCatMood").textContent = it.category + " · " + it.mood;
+
+  // trip / location field + autocomplete from existing trips
+  const tripEl=document.getElementById("mTrip");
+  tripEl.value = it.folder || "";
+  const dl=document.getElementById("tripList"); dl.innerHTML="";
+  folderList().forEach(f=>{ const o=document.createElement("option"); o.value=f.name; dl.appendChild(o); });
+  document.getElementById("mDate").textContent = fmtDate(it.date,true) || "—";
+
+  const swWrap=document.getElementById("mSwatches"); swWrap.innerHTML="";
+  (it.colors||[]).forEach(c=>{
+    const box=document.createElement("div"); box.style.cssText="display:flex;flex-direction:column;align-items:center;gap:5px;";
+    const s=document.createElement("div"); s.className="m-sw"; s.style.background=c;
+    const hex=document.createElement("div"); hex.className="m-sw-hex"; hex.textContent=c;
+    box.appendChild(s); box.appendChild(hex); swWrap.appendChild(box);
+  });
+  document.getElementById("mMats").textContent = (it.materials&&it.materials.length)?it.materials.join(", "):"—";
+
+  const actions=document.getElementById("mActions"); actions.innerHTML="";
+  if(editing){
+    actions.appendChild(mkBtn("done","btn btn-line", async ()=>{
+      it.name = nameEl.textContent.trim() || it.name;
+      it.description = descEl.textContent.trim();
+      await apiEdit(it.id, {name:it.name, description:it.description});
+      refreshCard(it.id); editing=false; paintModal();
+    }));
+  } else {
+    actions.appendChild(mkBtn("edit","btn", ()=>{ editing=true; paintModal(); setTimeout(()=>placeCursorEnd(nameEl),0); }));
+    actions.appendChild(mkBtn("delete","btn danger", async ()=>{
+      await apiDelete(it.id);
+      items = items.filter(x=>x.id!==it.id);
+      render(); closeModal();
+    }));
+    const note=document.createElement("span"); note.className="res-note"; note.textContent="full-resolution original"; actions.appendChild(note);
+  }
+}
+function mkBtn(label,cls,fn){ const b=document.createElement("button"); b.className=cls; b.textContent=label; b.addEventListener("click",fn); return b; }
+function placeCursorEnd(el){ el.focus(); const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r); }
+overlay.addEventListener("click", e=>{ if(e.target===overlay) closeModal(); });
+document.addEventListener("keydown", e=>{
+  if(e.key!=="Escape") return;
+  if(overlay.classList.contains("open")) closeModal();
+  else if(selecting) exitSelect();
+});
+
+// assign / change an image's trip (saves immediately on Enter or blur)
+const tripInput=document.getElementById("mTrip");
+async function saveTrip(){
+  const it=items.find(x=>x.id===activeId); if(!it) return;
+  const val=tripInput.value.trim();
+  if(val===(it.folder||"")) return;          // no change
+  it.folder=val;
+  await apiEdit(it.id,{folder:val});
+  render();                                   // refresh folders bar + grid
+}
+tripInput.addEventListener("change", saveTrip);
+tripInput.addEventListener("keydown", e=>{ if(e.key==="Enter"){ e.preventDefault(); tripInput.blur(); } });
+
+/* ---------- search ---------- */
+const searchInput=document.getElementById("search");
+const searchClear=document.getElementById("searchClear");
+searchInput.addEventListener("input", ()=>{
+  searchQuery=searchInput.value.trim().toLowerCase();
+  searchClear.style.display=searchQuery?"inline":"none";
+  render();
+});
+searchClear.addEventListener("click", ()=>{ searchInput.value=""; searchQuery=""; searchClear.style.display="none"; searchInput.focus(); render(); });
+
+/* ---------- make a zine ---------- */
+let selecting=false;
+const selectedIds=new Set();
+const zineToolbar=document.getElementById("zineToolbar");
+const ztCount=document.getElementById("ztCount");
+const ztTitle=document.getElementById("ztTitle");
+const ztCreate=document.getElementById("ztCreate");
+
+function enterSelect(){
+  selecting=true; document.body.classList.add("selecting");
+  if(activeFolder && activeFolder!==UNSORTED && !ztTitle.value) ztTitle.value=activeFolder;
+  updateZineCount();
+}
+function exitSelect(){
+  selecting=false; document.body.classList.remove("selecting");
+  selectedIds.clear();
+  grid.querySelectorAll(".card.selected").forEach(c=>c.classList.remove("selected"));
+  updateZineCount();
+}
+function updateZineCount(){
+  const n=selectedIds.size;
+  ztCreate.disabled=n===0;
+  if(n===0){ ztCount.textContent="select images"; ztCount.classList.remove("warn"); return; }
+  let txt, warn=false;
+  if(zineFormat==="mini"){
+    txt=n+" / 7";
+    if(n>7){ txt=n+" / 7 · first 7 used"; warn=true; }
+  } else if(zineFormat==="booklet"){
+    const pages=n+1, padded=Math.ceil(pages/4)*4, sheets=padded/4, blanks=padded-pages;
+    txt=n+" selected · "+sheets+" sheet"+(sheets===1?"":"s")+(blanks?" · "+blanks+" blank":"");
+  } else {
+    txt=n+" selected · "+(n+1)+" pages";
+  }
+  ztCount.textContent=txt;
+  ztCount.classList.toggle("warn", warn);
+}
+function toggleSelect(id, card){
+  if(selectedIds.has(id)){ selectedIds.delete(id); card.classList.remove("selected"); }
+  else { selectedIds.add(id); card.classList.add("selected"); }
+  updateZineCount();
+}
+
+document.getElementById("zineStart").addEventListener("click", enterSelect);
+document.getElementById("ztCancel").addEventListener("click", exitSelect);
+document.getElementById("ztClear").addEventListener("click", ()=>{
+  selectedIds.clear();
+  grid.querySelectorAll(".card.selected").forEach(c=>c.classList.remove("selected"));
+  updateZineCount();
+});
+document.getElementById("ztAll").addEventListener("click", ()=>{
+  grid.querySelectorAll(".card").forEach(card=>{
+    const it=items.find(x=>x.id===card.dataset.id);
+    if(it && it.status==="ready"){ selectedIds.add(it.id); card.classList.add("selected"); }
+  });
+  updateZineCount();
+});
+ztCreate.addEventListener("click", createZine);
+
+// readable date range for the cover, e.g. "may 30–31, 2026"
+function dateRange(list){
+  const ds=list.map(it=>it.date).filter(Boolean).sort();
+  if(!ds.length) return "";
+  const a=/^(\d{4})-(\d{2})-(\d{2})/.exec(ds[0]), b=/^(\d{4})-(\d{2})-(\d{2})/.exec(ds[ds.length-1]);
+  if(!a||!b) return "";
+  if(ds[0]===ds[ds.length-1]) return MONTHS[+a[2]-1]+" "+(+a[3])+", "+a[1];
+  if(a[1]===b[1] && a[2]===b[2]) return MONTHS[+a[2]-1]+" "+(+a[3])+"–"+(+b[3])+", "+a[1];
+  if(a[1]===b[1]) return MONTHS[+a[2]-1]+" "+(+a[3])+" – "+MONTHS[+b[2]-1]+" "+(+b[3])+", "+a[1];
+  return fmtDate(ds[0],true)+" – "+fmtDate(ds[ds.length-1],true);
+}
+function esc(s){ return (""+(s==null?"":s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
+
+function imgURL(it){ return location.origin+"/library-print/"+esc(it.file); }
+let zineFormat="pages";
+document.querySelectorAll("#ztFmt .zf").forEach(el=>{
+  el.addEventListener("click",()=>{
+    zineFormat=el.dataset.fmt;
+    document.querySelectorAll("#ztFmt .zf").forEach(x=>x.classList.toggle("active",x===el));
+    updateZineCount();
+  });
+});
+// US Letter only (the printer in use). Physical dimensions (mm) + @page keyword.
+const PAPER={
+  letter:{ portrait:[215.9,279.4], landscape:[279.4,215.9], css:"letter" }
+};
+
+function createZine(){
+  let chosen=items.filter(it=>it.status==="ready" && selectedIds.has(it.id));
+  if(!chosen.length) return;
+  chosen.sort((a,b)=>(a.date||"9999").localeCompare(b.date||"9999"));   // chronological trip flow
+  const title=ztTitle.value.trim() || (activeFolder && activeFolder!==UNSORTED ? activeFolder : "Field Notes");
+  const nums=document.getElementById("ztNums").checked;
+  let html;
+  if(zineFormat==="mini"){
+    html=buildMiniZine(chosen.slice(0,7), title, nums, "letter");
+  } else if(zineFormat==="booklet"){
+    html=buildBooklet(chosen, title, nums, "letter");
+  } else {
+    html=buildPagesZine(chosen, title, "letter");
+  }
+  // Build, then open the zine in its own chromeless Chrome app window (not a browser tab).
+  ztCount.textContent="building zine…";
+  fetch("/api/zine",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({html:html,title:title})})
+    .then(r=>r.json())
+    .then(j=>{
+      if(!j||!j.id) throw new Error("no id");
+      return fetch("/api/open?p=/zine/"+j.id).then(r=>r.json()).then(o=>{
+        if(!o||!o.ok) window.open("/zine/"+j.id,"_blank");   // fallback if Chrome isn't available
+      });
+    })
+    .then(()=>updateZineCount())
+    .catch(()=>{ ztCount.textContent="couldn’t build — try again"; });
+}
+
+/* ---- shared building blocks ---- */
+const BASE_CSS=
+  ':root{--ink:#1A1A1A;--ink2:#444;--gray:#666;--line:#E5E5E5;--serif:\'EB Garamond\',Georgia,serif;--sans:\'Inter\',system-ui,sans-serif;}'+
+  '*{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}'+
+  'html,body{margin:0;padding:0;background:#fff;color:var(--ink);font-family:var(--serif);}'+
+  '.bar{position:fixed;top:0;left:0;right:0;display:flex;gap:16px;align-items:center;justify-content:center;background:#1A1A1A;color:#fff;padding:12px;z-index:10;font-family:var(--sans);}'+
+  '.barbtn{font-family:var(--sans);font-size:12px;text-transform:lowercase;letter-spacing:.04em;background:#fff;color:#1A1A1A;border:none;padding:8px 18px;cursor:pointer;text-decoration:none;display:inline-block;}'+
+  '.barbtn.ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);}'+
+  '.bar span{opacity:.78;font-size:11px;letter-spacing:.03em;text-align:center;}'+
+  '.pnum{position:absolute;top:3mm;right:3mm;font-family:var(--sans);font-size:8pt;color:#bbb;letter-spacing:.05em;z-index:3;}'+
+  '.zname{font-family:var(--serif);font-style:italic;line-height:1.15;}'+
+  '.zdesc{font-family:var(--serif);color:var(--ink2);}'+
+  '.zrows{display:flex;flex-direction:column;}'+
+  '.zrow{display:flex;align-items:baseline;border-top:1px solid var(--line);}'+
+  '.zlab{font-family:var(--sans);text-transform:lowercase;letter-spacing:.12em;color:var(--gray);flex-shrink:0;}'+
+  '.zval{font-family:var(--sans);letter-spacing:.02em;color:var(--ink);text-transform:lowercase;}'+
+  '.zpals{display:flex;flex-wrap:wrap;}'+
+  '.zpal{display:flex;align-items:center;gap:5px;}'+
+  '.zsw{border:1px solid var(--line);display:inline-block;}'+
+  '.zhex{font-family:var(--sans);color:var(--gray);letter-spacing:.03em;}'+
+  '.cv-brand{font-family:var(--sans);text-transform:lowercase;letter-spacing:.2em;color:var(--gray);}'+
+  '.cv-place{font-family:var(--serif);font-weight:500;line-height:1.02;letter-spacing:.01em;}'+
+  '.cv-dates{font-family:var(--serif);font-style:italic;color:var(--gray);}'+
+  '.cv-foot{font-family:var(--sans);text-transform:lowercase;letter-spacing:.14em;color:var(--gray);}';
+function doc(title, css, body){
+  return '<!doctype html><html lang="en"><head><meta charset="utf-8">'+
+    '<title>'+esc(title)+' — field notes</title>'+
+    '<link rel="stylesheet" href="/fonts/fonts.css">'+
+    '<style>'+BASE_CSS+css+'</style></head><body>'+body+'</body></html>';
+}
+function bar(msg){
+  return '<div class="bar"><button class="barbtn" onclick="window.print()">save as pdf / print ↓</button><span>'+msg+'</span></div>';
+}
+function palette(it){ return (it.colors||[]).map(c=>'<div class="zpal"><span class="zsw" style="background:'+esc(c)+'"></span><span class="zhex">'+esc(c)+'</span></div>').join(""); }
+function metaRows(it){
+  const mats=(it.materials&&it.materials.length)?esc(it.materials.join(", ")):"—";
+  const loc=[it.folder?esc(it.folder):"", fmtDate(it.date,true)].filter(Boolean).join(" · ")||"—";
+  return '<div class="zrows">'+
+    '<div class="zrow"><span class="zlab">palette</span><div class="zpals">'+palette(it)+'</div></div>'+
+    '<div class="zrow"><span class="zlab">materials</span><span class="zval">'+mats+'</span></div>'+
+    '<div class="zrow"><span class="zlab">category · mood</span><span class="zval">'+esc(it.category)+' · '+esc(it.mood)+'</span></div>'+
+    '<div class="zrow"><span class="zlab">location · date</span><span class="zval">'+loc+'</span></div>'+
+  '</div>';
+}
+function coverBlock(title, list){
+  const range=dateRange(list);
+  return '<div class="cv-brand">field notes</div>'+
+    '<div class="cv-main"><div class="cv-place">'+esc(title)+'</div>'+
+      (range?'<div class="cv-dates">'+esc(range)+'</div>':'')+'</div>'+
+    '<div class="cv-foot">'+list.length+' reference'+(list.length===1?'':'s')+'</div>';
+}
+
+/* ---- format 1: editorial pages (one per page) ---- */
+function buildPagesZine(list, title, paper){
+  const pg=PAPER[paper]||PAPER.a4;
+  const css=
+    '@page{size:'+pg.css+';margin:0;}'+
+    '.page{width:'+pg.portrait[0]+'mm;height:'+pg.portrait[1]+'mm;padding:20mm;display:flex;flex-direction:column;overflow:hidden;page-break-after:always;background:#fff;}'+
+    '.page:last-child{page-break-after:auto;}'+
+    '.cover{justify-content:space-between;}.cv-main{margin:auto 0;}'+
+    '.cv-brand{font-size:12px;}.cv-place{font-size:84px;}.cv-dates{font-size:26px;margin-top:14px;}.cv-foot{font-size:11px;}'+
+    '.ref-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);}'+
+    '.ref-img img{max-width:100%;max-height:100%;object-fit:contain;display:block;}'+
+    '.ref-meta{padding-top:18px;}.zname{font-size:30px;}.zdesc{font-size:16px;line-height:1.5;margin-top:8px;}'+
+    '.zrows{margin-top:16px;gap:9px;}.zrow{gap:16px;padding-top:9px;}.zlab{font-size:9.5px;width:118px;}.zval{font-size:12.5px;}'+
+    '.zpals{gap:12px;}.zsw{width:18px;height:18px;}.zhex{font-size:10.5px;}'+
+    '@media screen{body{background:#8c8c8c;}.book{padding:64px 0 40px;}.page{margin:0 auto 28px;box-shadow:0 4px 28px rgba(0,0,0,.28);}}'+
+    '@media print{.bar{display:none;}.page{margin:0;box-shadow:none;}}';
+  const cover='<section class="page cover">'+coverBlock(title,list)+'</section>';
+  const pages=list.map(it=>'<section class="page ref"><div class="ref-img"><img src="'+imgURL(it)+'" alt=""></div>'+
+    '<div class="ref-meta"><div class="zname">'+esc(it.name)+'</div>'+
+    (it.description?'<div class="zdesc">'+esc(it.description)+'</div>':'')+metaRows(it)+'</div></section>').join("");
+  return doc(title, css, bar(list.length+' page'+(list.length===1?'':'s')+' + cover · choose “Save as PDF” in the dialog')+
+    '<main class="book">'+cover+pages+'</main>');
+}
+
+/* ---- format 2: one-sheet mini-zine (fold + 1 cut, PocketMod imposition) ---- */
+function buildMiniZine(list, title, nums, paper){
+  const pg=PAPER[paper]||PAPER.a4;
+  // book pages: 1=cover, 2..8 = images[0..6]
+  const img=i=>list[i];
+  const num=n=>nums?'<span class="pnum">'+n+'</span>':'';
+  const panelImg=(it,n)=>{
+    if(!it) return num(n);
+    const dots=(it.colors||[]).slice(0,4).map(c=>'<span class="md" style="background:'+esc(c)+'"></span>').join("");
+    const cap=esc(it.name)+(it.date?' · '+fmtDate(it.date,false):'');
+    return num(n)+'<div class="mp-img"><img src="'+imgURL(it)+'"></div>'+
+      '<div class="mp-cap"><span class="mp-nm">'+cap+'</span><span class="mp-dots">'+dots+'</span></div>';
+  };
+  const panelCover=(n)=>num(n)+'<div class="mp-cover">'+coverBlock(title,list)+'</div>';
+  const panel=(inner,flip)=>'<div class="panel'+(flip?' flip':'')+'">'+inner+'</div>';
+  // grid row-major (T1..T4, B1..B4). Top row rotated 180.
+  // T1=pg7(img5) T2=pg6(img4) T3=pg5(img3) T4=pg4(img2) | B1=pg8(img6) B2=pg1(cover) B3=pg2(img0) B4=pg3(img1)
+  const cells=
+    panel(panelImg(img(5),7),true)+panel(panelImg(img(4),6),true)+panel(panelImg(img(3),5),true)+panel(panelImg(img(2),4),true)+
+    panel(panelImg(img(6),8),false)+panel(panelCover(1),false)+panel(panelImg(img(0),2),false)+panel(panelImg(img(1),3),false);
+  const css=
+    '@page{size:'+pg.css+' landscape;margin:0;}'+
+    '.sheet{width:'+pg.landscape[0]+'mm;height:'+pg.landscape[1]+'mm;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);}'+
+    '.panel{position:relative;overflow:hidden;display:flex;flex-direction:column;outline:0.4pt dashed #d6d6d6;outline-offset:-0.2pt;}'+
+    '.panel.flip{transform:rotate(180deg);}'+
+    '.mp-img{flex:1;min-height:0;overflow:hidden;}.mp-img img{width:100%;height:100%;object-fit:cover;display:block;}'+
+    '.mp-cap{display:flex;align-items:center;justify-content:space-between;gap:4pt;padding:3pt 4pt 4pt;font-family:var(--sans);}'+
+    '.mp-nm{font-size:7pt;letter-spacing:.02em;color:var(--ink);text-transform:lowercase;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}'+
+    '.mp-dots{display:flex;gap:2pt;flex-shrink:0;}.md{width:7pt;height:7pt;border:0.3pt solid var(--line);display:inline-block;}'+
+    '.mp-cover{height:100%;padding:7pt;display:flex;flex-direction:column;justify-content:center;gap:3pt;}'+
+    '.mp-cover .cv-brand{font-size:6.5pt;}.mp-cover .cv-main{margin:0;}.mp-cover .cv-place{font-size:19pt;}'+
+    '.mp-cover .cv-dates{font-size:8.5pt;margin-top:3pt;}.mp-cover .cv-foot{font-size:6pt;margin-top:4pt;}'+
+    '.guide{font-family:var(--sans);font-size:12px;color:#2a2a2a;max-width:760px;margin:26px auto;line-height:1.65;}'+
+    '.guide h3{font-size:12px;letter-spacing:.05em;text-transform:lowercase;margin:0 0 8px;}'+
+    '.guide ol{margin:0;padding-left:18px;}.guide li{margin:5px 0;}'+
+    '@media screen{body{background:#8c8c8c;}.mini-wrap{padding:64px 0 50px;}.sheet{margin:0 auto;background:#fff;box-shadow:0 4px 28px rgba(0,0,0,.28);}.guide{background:#fff;padding:22px 28px;}}'+
+    '@media print{.bar,.guide{display:none;}.sheet{outline:none;}.panel{outline:none;}}';
+  const guide='<div class="guide"><h3>fold &amp; cut — one-sheet mini-zine</h3><ol>'+
+    '<li>Print this sheet <b>single-sided</b>, landscape, at <b>100% (actual size)</b> — not “fit to page”.</li>'+
+    '<li>Fold in half the <b>long way</b> (top edge down to bottom), crease, unfold.</li>'+
+    '<li>Fold in half the <b>short way</b>, then in half again, to crease <b>four columns</b>; unfold flat.</li>'+
+    '<li>Fold the long way again; cut a <b>slit along the folded edge</b> spanning the middle two panels only.</li>'+
+    '<li>Unfold, fold the long way, push the two ends together so the slit opens into a <b>+</b>, then wrap the panels into a booklet and crease. The cover ('+esc(title)+') lands on front.</li>'+
+    (nums?'<li>The small grey numbers are the page order — fold a test copy to confirm, then untick “page #s” to hide them.</li>':'')+
+    '</ol></div>';
+  return doc(title, css, bar('one sheet · single-sided + landscape · pick “Save as PDF” · then fold &amp; one cut')+
+    '<main class="mini-wrap"><div class="sheet">'+cells+'</div>'+guide+'</main>');
+}
+
+/* ---- format 3: saddle-stitch booklet (double-sided, fold in half) ---- */
+function buildBooklet(list, title, nums, paper){
+  const pg=PAPER[paper]||PAPER.a4;
+  // reading pages: 1=cover, 2..(1+N)=images, padded to a multiple of 4
+  let pages=[{cover:true}].concat(list.map(it=>({it:it})));
+  while(pages.length%4!==0) pages.push({blank:true});
+  const P=pages.length, S=P/4;
+  const num=n=>nums?'<span class="pnum">'+n+'</span>':'';
+  const pageHTML=(pg,n)=>{
+    if(!pg||pg.blank) return '<div class="bpage blank">'+num(n)+'</div>';
+    if(pg.cover) return '<div class="bpage bcover">'+num(n)+coverBlock(title,list)+'</div>';
+    const it=pg.it;
+    return '<div class="bpage">'+num(n)+'<div class="bp-img"><img src="'+imgURL(it)+'"></div>'+
+      '<div class="bp-meta"><div class="zname">'+esc(it.name)+'</div>'+
+      (it.description?'<div class="zdesc">'+esc(it.description)+'</div>':'')+metaRows(it)+'</div></div>';
+  };
+  const get=n=>pages[n-1];
+  let sheets='';
+  for(let s=0;s<S;s++){
+    const fl=P-2*s, fr=1+2*s, bl=2+2*s, br=P-1-2*s;
+    sheets+='<div class="sheet">'+pageHTML(get(fl),fl)+pageHTML(get(fr),fr)+'</div>';   // front of sheet
+    sheets+='<div class="sheet">'+pageHTML(get(bl),bl)+pageHTML(get(br),br)+'</div>';   // back of sheet
+  }
+  const css=
+    '@page{size:'+pg.css+' landscape;margin:0;}'+
+    '.sheet{width:'+pg.landscape[0]+'mm;height:'+pg.landscape[1]+'mm;display:grid;grid-template-columns:1fr 1fr;page-break-after:always;}'+
+    '.sheet:last-child{page-break-after:auto;}'+
+    '.bpage{position:relative;padding:13mm;display:flex;flex-direction:column;overflow:hidden;background:#fff;border-right:0.4pt dashed #d6d6d6;}'+
+    '.bpage:last-child{border-right:none;}'+
+    '.bcover{justify-content:space-between;}.bcover .cv-main{margin:auto 0;}'+
+    '.cv-brand{font-size:10px;}.cv-place{font-size:48px;}.cv-dates{font-size:18px;margin-top:10px;}.cv-foot{font-size:9px;}'+
+    '.bp-img{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);}'+
+    '.bp-img img{max-width:100%;max-height:100%;object-fit:contain;display:block;}'+
+    '.bp-meta{padding-top:12px;}.zname{font-size:20px;}.zdesc{font-size:12px;line-height:1.45;margin-top:6px;}'+
+    '.zrows{margin-top:11px;gap:6px;}.zrow{gap:12px;padding-top:6px;}.zlab{font-size:8px;width:92px;}.zval{font-size:10px;}'+
+    '.zpals{gap:9px;}.zsw{width:13px;height:13px;}.zhex{font-size:8.5px;}'+
+    '@media screen{body{background:#8c8c8c;}.book{padding:64px 0 40px;}.sheet{margin:0 auto 28px;box-shadow:0 4px 28px rgba(0,0,0,.28);}.guide{font-family:var(--sans);font-size:12px;max-width:760px;margin:0 auto 40px;background:#fff;padding:22px 28px;line-height:1.65;color:#2a2a2a;}.guide h3{font-size:12px;text-transform:lowercase;letter-spacing:.05em;margin:0 0 8px;}.guide ol{margin:0;padding-left:18px;}}'+
+    '@media print{.bar,.guide{display:none;}.sheet{margin:0;box-shadow:none;}.bpage{border-right:none;}}';
+  const guide='<div class="guide"><h3>print &amp; fold — booklet</h3><ol>'+
+    '<li>Print <b>double-sided</b>, landscape, 100%. Set two-sided to <b>flip on short edge</b>.</li>'+
+    '<li>Stack the '+S+' sheet'+(S===1?'':'s')+' in order, fold the stack in half, and staple along the spine.</li>'+
+    '<li>If the back pages come out upside-down, switch the printer’s two-sided setting between “long edge” and “short edge”.</li>'+
+    '</ol></div>';
+  return doc(title, css, bar(P+' pages · '+S+' sheet'+(S===1?'':'s')+' double-sided · “Save as PDF”, then fold + staple')+
+    '<main class="book">'+sheets+guide+'</main>');
+}
+
+/* ---------- init ---------- */
+function mapLib(data){ return (Array.isArray(data)?data:[]).map(x=>({ ...x, status:"ready", dataURL:"" })); }
+async function init(){
+  try{
+    const r = await fetch("/api/library");
+    items = mapLib(await r.json());
+  }catch(e){ items=[]; }
+  render();
+  // safety net: any item missing a date hasn't been scanned for location/date yet.
+  // Backfill in the background (non-blocking), then refresh once.
+  if(items.some(it=>it.date===undefined)){
+    fetch("/api/backfill",{method:"POST"})
+      .then(()=>fetch("/api/library")).then(r=>r.json())
+      .then(data=>{ items = mapLib(data); render(); })
+      .catch(()=>{});
+  }
+}
+init();
+</script>
+</body>
+</html>

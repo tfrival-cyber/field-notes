@@ -1,0 +1,82 @@
+[
+  {
+    "id": "fn_1780416728361_dgagla",
+    "file": "fn_1780416728361_dgagla.jpg",
+    "folder": "Antwerp",
+    "date": "2026-06-02",
+    "name": "Folded Terracotta",
+    "description": "A folded rust-orange textile swatch rests against speckled grey carpet samples, warm wool catching low light over a cool granular field.",
+    "category": "material",
+    "mood": "warm",
+    "colors": [
+      "#c06a3a",
+      "#9e9384",
+      "#54504b",
+      "#d9c8b4"
+    ],
+    "materials": [
+      "textile",
+      "wool"
+    ]
+  },
+  {
+    "id": "fn_1780416704772_57hycr",
+    "file": "fn_1780416704772_57hycr.jpg",
+    "folder": "Antwerp",
+    "date": "2026-06-02",
+    "name": "Workshop Beacon",
+    "description": "A glass-domed red signal lamp mounted on rust-mottled cast machinery, surrounded by the painted greens and ochres of an old workshop.",
+    "category": "object",
+    "mood": "warm",
+    "colors": [
+      "#b73223",
+      "#7d8a3c",
+      "#b7975a",
+      "#8f9499"
+    ],
+    "materials": [
+      "metal",
+      "glass"
+    ]
+  },
+  {
+    "id": "fn_1780416638921_9igqyh",
+    "file": "fn_1780416638921_9igqyh.jpg",
+    "folder": "Antwerp",
+    "date": "2026-06-02",
+    "name": "Veined Marble",
+    "description": "A polished marble slab where rust and grey strata swirl through cream veining, all caught under a soft sheen.",
+    "category": "material",
+    "mood": "textured",
+    "colors": [
+      "#7a6a5f",
+      "#5a4b47",
+      "#c9b79c",
+      "#9a8a7d"
+    ],
+    "materials": [
+      "stone",
+      "marble"
+    ]
+  },
+  {
+    "id": "fn_1780254950768_y8qt03",
+    "file": "fn_1780254950768_y8qt03.jpg",
+    "folder": "Antwerp",
+    "date": "2026-05-31",
+    "name": "Bar Paniek Signage",
+    "description": "A cluster of hand-lettered enamel and neon signs—orange, red, and cobalt—stacked against the steel rafters of an industrial market hall threaded with palms.",
+    "category": "detail",
+    "mood": "bold",
+    "colors": [
+      "#E8541C",
+      "#C4322A",
+      "#2A4FA8",
+      "#3B4A3A"
+    ],
+    "materials": [
+      "enamel",
+      "steel"
+    ]
+  }
+]
