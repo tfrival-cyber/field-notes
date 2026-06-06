@@ -56,9 +56,15 @@ tool, opened up so anyone can run their own.
 
 ## setup
 
-requires **Node 18+** on **macOS** (it leans on the built-in `sips`/`mdls` tools).
-the easiest path also uses the **`claude` CLI** — if you already use
-[Claude Code](https://claude.com/claude-code), you're set; no API key needed.
+> **before you start, you need:**
+> 1. **macOS** — it uses the built-in `sips` + `mdls` tools (no Windows/Linux yet)
+> 2. **Node 18 or newer** — check with `node -v` ([install here](https://nodejs.org))
+> 3. **a way to analyse images** — *either* of:
+>    - **[Claude Code](https://claude.com/claude-code)** installed and logged in (easiest, no key), **or**
+>    - an **Anthropic API key** ([get one](https://console.anthropic.com))
+>
+> the app still opens and runs without #3 — you just can't name/tag photos until
+> one of those is in place.
 
 ```bash
 # 1. clone
@@ -67,8 +73,8 @@ cd field-notes
 
 # 2. dependencies — there are none to install (zero-dependency Node app)
 
-# 3. (optional) configure
-cp .env.example .env      # only if you want to use an API key instead of the CLI
+# 3. (optional) only if you're using an API key instead of Claude Code:
+cp .env.example .env      # then open .env and paste your key
 
 # 4. run
 node server.js

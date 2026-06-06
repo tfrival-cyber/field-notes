@@ -23,6 +23,24 @@ function bufHash(buf) { return crypto.createHash("md5").update(buf).digest("hex"
 // a library-only check would miss them. We hold the hash until the response closes.
 const inFlight = new Set();
 
+// Load a local .env file if present (KEY=VALUE per line) so newcomers can just
+// paste their key into .env. Zero dependencies — a tiny parser, not dotenv. Real
+// environment variables always win over .env.
+(function loadDotEnv() {
+  try {
+    const txt = fs.readFileSync(path.join(__dirname, ".env"), "utf8");
+    for (let line of txt.split("\n")) {
+      line = line.trim();
+      if (!line || line[0] === "#") continue;
+      const eq = line.indexOf("=");
+      if (eq < 1) continue;
+      const key = line.slice(0, eq).trim();
+      let val = line.slice(eq + 1).trim().replace(/^["']|["']$/g, "");
+      if (!(key in process.env)) process.env[key] = val;
+    }
+  } catch (e) { /* no .env — that's fine */ }
+})();
+
 const PORT = process.env.PORT || 4317;
 const ROOT = __dirname;
 const LIB_DIR = path.join(ROOT, "library");
@@ -43,12 +61,16 @@ const SPAWN_ENV = Object.assign({}, process.env, {
 });
 const CLAUDE_BIN = (() => {
   if (process.env.CLAUDE_BIN) return process.env.CLAUDE_BIN;
-  for (const dir of EXTRA_PATH.split(":")) {
+  const dirs = ((process.env.PATH || "") + ":" + EXTRA_PATH).split(":").filter(Boolean);
+  for (const dir of dirs) {
     const p = path.join(dir, "claude");
     try { fs.accessSync(p, fs.constants.X_OK); return p; } catch (e) {}
   }
-  return "claude";                                           // last resort: rely on PATH
+  return "claude";                                           // last resort: rely on PATH at spawn
 })();
+// True when we found a real `claude` binary (absolute path). When false AND no API
+// key is set, image analysis can't run — we say so loudly at startup.
+const CLAUDE_FOUND = CLAUDE_BIN !== "claude";
 
 if (!fs.existsSync(LIB_DIR)) fs.mkdirSync(LIB_DIR, { recursive: true });
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
@@ -600,6 +622,18 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log("\n  Field Notes  →  http://localhost:" + PORT);
   console.log("  library: " + LIB_JSON);
-  console.log("  analysis: " + (API_KEY ? "ANTHROPIC_API_KEY set (will fall back to API if CLI missing)" : "via `" + CLAUDE_BIN + "` CLI — no API key needed"));
+  if (CLAUDE_FOUND) {
+    console.log("  analysis: via `" + CLAUDE_BIN + "` CLI — no API key needed");
+  } else if (API_KEY) {
+    console.log("  analysis: ANTHROPIC_API_KEY set (using the Anthropic API)");
+  } else {
+    console.log("");
+    console.log("  ⚠  image analysis isn't set up yet. The app will open and you can");
+    console.log("     browse, but dropped photos can't be named/tagged until you do ONE of:");
+    console.log("");
+    console.log("       • install Claude Code and log in   → https://claude.com/claude-code");
+    console.log("       • or add an API key to a .env file → ANTHROPIC_API_KEY=sk-ant-...");
+    console.log("         (get one at https://console.anthropic.com)");
+  }
   console.log("");
 });

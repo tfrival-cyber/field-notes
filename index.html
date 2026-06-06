@@ -516,6 +516,13 @@ function refreshCard(id){
 }
 
 /* ---------- ingest ---------- */
+// turn a raw server error into something a newcomer can act on
+function friendlyErr(err){
+  const m = (err && err.message) ? String(err.message) : "";
+  if(/claude.+(not found|cli)|anthropic_api_key|analysis isn'?t set up/i.test(m))
+    return "image analysis isn't set up yet — install claude code, or add an api key (see the readme)";
+  return m ? m.toLowerCase().slice(0,100) : "couldn't read this one";
+}
 async function ingest(files){
   const list = Array.from(files).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
   for(const file of list){
@@ -539,7 +546,7 @@ async function ingest(files){
       item.status = "ready";
     }catch(err){
       item.status = "error";
-      item.error = (err && err.message) ? err.message.toLowerCase().slice(0,70) : "couldn't read this one";
+      item.error = friendlyErr(err);
     }
     render();
   }
@@ -554,7 +561,7 @@ async function retry(id){
     const rec = await apiAdd(id, original, it.filename || "image.jpg");
     Object.assign(it, rec); it.dataURL=""; delete pending[id]; it.status="ready";
   }catch(err){
-    it.status="error"; it.error=(err&&err.message)?err.message.toLowerCase().slice(0,70):"couldn't read this one";
+    it.status="error"; it.error=friendlyErr(err);
   }
   render();
 }
