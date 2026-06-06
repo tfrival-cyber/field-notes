@@ -4,10 +4,13 @@ a local reference notebook for designers. drop travel photos in, and Claude name
 each one, samples its palette, and tags the materials — then files it into the trip
 it came from. everything lives on your own disk. no account, no cloud, no upload.
 
-<!-- screenshots: drop 1–2 images in ./docs and update these paths -->
 <p align="center">
-  <img src="docs/screenshot-grid.png" alt="the library grid" width="49%">
-  <img src="docs/screenshot-zine.png" alt="a printable mini-zine" width="49%">
+  <img src="docs/screenshot-grid.png" alt="the library grid" width="100%">
+</p>
+<p align="center">
+  <img src="docs/screenshot-zine.jpg" alt="printed mini-zines, folded and cut" width="70%">
+  <br>
+  <em>references, folded into single-sheet mini-zines</em>
 </p>
 
 > 🎬 **watch the 60-second demo:** [instagram reel →](INSTAGRAM_REEL_LINK_HERE)
