@@ -18,6 +18,11 @@ const crypto = require("crypto");
 // md5 of a buffer, used to detect re-imported (byte-identical) photos
 function bufHash(buf) { return crypto.createHash("md5").update(buf).digest("hex"); }
 
+// Hashes currently being analysed. The browser can fire a drop twice (or send the
+// same photo from two ingests at once); those land here before either is saved, so
+// a library-only check would miss them. We hold the hash until the response closes.
+const inFlight = new Set();
+
 const PORT = process.env.PORT || 4317;
 const ROOT = __dirname;
 const LIB_DIR = path.join(ROOT, "library");
@@ -197,7 +202,58 @@ function readGeoCache() { try { return JSON.parse(fs.readFileSync(GEO_CACHE, "ut
 function writeGeoCache(o) { try { fs.writeFileSync(GEO_CACHE, JSON.stringify(o)); } catch (e) {} }
 
 // Read GPS + capture date from an image's EXIF via macOS `mdls`.
-function readPhotoMeta(absPath) {
+// Read GPS + capture date straight from a JPEG's EXIF bytes (APP1/TIFF). Returns
+// nulls if the file isn't a JPEG or has no EXIF. This is the reliable path: it
+// doesn't depend on Spotlight having indexed the file, which it won't have for a
+// photo we just wrote to disk a moment ago.
+function exifFromJpeg(absPath) {
+  let buf;
+  try { buf = fs.readFileSync(absPath); } catch (e) { return { lat: null, lon: null, date: "" }; }
+  const none = { lat: null, lon: null, date: "" };
+  try {
+    if (buf[0] !== 0xFF || buf[1] !== 0xD8) return none;           // not a JPEG
+    let off = 2;
+    while (off < buf.length - 1) {
+      if (buf[off] !== 0xFF) break;
+      const marker = buf[off + 1], size = buf.readUInt16BE(off + 2);
+      if (marker === 0xE1 && buf.toString("ascii", off + 4, off + 10) === "Exif\0\0") {
+        const tiff = off + 10;
+        const le = buf.toString("ascii", tiff, tiff + 2) === "II";
+        const u16 = o => le ? buf.readUInt16LE(o) : buf.readUInt16BE(o);
+        const u32 = o => le ? buf.readUInt32LE(o) : buf.readUInt32BE(o);
+        const ifd0 = tiff + u32(tiff + 4);
+        let gpsOff = 0, exifOff = 0;
+        const n0 = u16(ifd0);
+        for (let i = 0; i < n0; i++) { const e = ifd0 + 2 + i * 12, tag = u16(e); if (tag === 0x8825) gpsOff = tiff + u32(e + 8); if (tag === 0x8769) exifOff = tiff + u32(e + 8); }
+        const out = { lat: null, lon: null, date: "" };
+        if (gpsOff) {
+          const gn = u16(gpsOff); let latRef, lonRef, lat, lon;
+          const rat = o => u32(o) / u32(o + 4);
+          const dms = o => rat(o) + rat(o + 8) / 60 + rat(o + 16) / 3600;
+          for (let i = 0; i < gn; i++) {
+            const e = gpsOff + 2 + i * 12, tag = u16(e);
+            if (tag === 1) latRef = String.fromCharCode(buf[e + 8]);
+            if (tag === 2) lat = dms(tiff + u32(e + 8));
+            if (tag === 3) lonRef = String.fromCharCode(buf[e + 8]);
+            if (tag === 4) lon = dms(tiff + u32(e + 8));
+          }
+          if (Number.isFinite(lat) && Number.isFinite(lon)) { out.lat = latRef === "S" ? -lat : lat; out.lon = lonRef === "W" ? -lon : lon; }
+        }
+        if (exifOff) {
+          const en = u16(exifOff);
+          for (let i = 0; i < en; i++) { const e = exifOff + 2 + i * 12, tag = u16(e); if (tag === 0x9003) { const d = buf.toString("ascii", tiff + u32(e + 8), tiff + u32(e + 8) + 10); if (/^\d{4}:\d{2}:\d{2}$/.test(d)) out.date = d.replace(/:/g, "-"); } }
+        }
+        return out;
+      }
+      off += 2 + size;
+    }
+  } catch (e) { /* malformed EXIF — fall through */ }
+  return none;
+}
+
+// Spotlight (mdls) fallback — only reached when EXIF-from-bytes finds nothing
+// (e.g. PNG/WEBP, or HEIC whose GPS didn't survive conversion).
+function mdlsMeta(absPath) {
   return new Promise(resolve => {
     let child;
     try { child = spawn("mdls", ["-name", "kMDItemLatitude", "-name", "kMDItemLongitude", "-name", "kMDItemContentCreationDate", absPath]); }
@@ -212,6 +268,14 @@ function readPhotoMeta(absPath) {
       resolve({ lat: Number.isFinite(lat) ? lat : null, lon: Number.isFinite(lon) ? lon : null, date: dm ? dm[1] : "" });
     });
   });
+}
+
+// Capture metadata for a stored image: EXIF bytes first, Spotlight as a fallback.
+async function readPhotoMeta(absPath) {
+  const exif = exifFromJpeg(absPath);
+  if (exif.lat != null && exif.lon != null) return exif;          // got coords straight from the file
+  const md = await mdlsMeta(absPath);
+  return { lat: md.lat, lon: md.lon, date: exif.date || md.date };
 }
 
 // Coordinates -> city name (cached by ~1km). Returns "" on any failure/offline.
@@ -426,6 +490,10 @@ const server = http.createServer(async (req, res) => {
         const dupe = lib0.find(x => x.id !== id && x.hash === sig);
         if (dupe) return json(res, 200, Object.assign({ duplicate: true }, dupe));
       }
+      // already analysing this exact photo (concurrent double-import) — drop this one
+      if (inFlight.has(sig)) return json(res, 200, { duplicate: true });
+      inFlight.add(sig);
+      res.on("close", () => inFlight.delete(sig));   // release no matter how we exit
 
       const fname = (it.filename || "").toLowerCase();
       const isHeic = /image\/hei[cf]/.test(parts.mediaType) || /\.(heic|heif)$/.test(fname);
@@ -475,8 +543,10 @@ const server = http.createServer(async (req, res) => {
         return json(res, 500, { error: (err && err.message) ? err.message : "analysis failed" });
       }
 
-      // 5) auto-detect trip (location) + date from the original's EXIF (srcAbs still intact here)
-      const auto = await detectTripAndDate(srcAbs);
+      // 5) auto-detect trip (location) + date from the stored image's EXIF.
+      // Use the display file: for HEIC that's the converted JPEG (EXIF preserved),
+      // for everything else it's the original bytes.
+      const auto = await detectTripAndDate(path.join(LIB_DIR, displayFile));
 
       // 6) persist (replace any existing record with this id, so retries don't duplicate)
       let lib = readLib();

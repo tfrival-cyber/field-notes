@@ -528,6 +528,11 @@ async function ingest(files){
       item.dataURL = original; refreshCard(id);
       pending[id] = original;
       const rec = await apiAdd(id, original, file.name);  // convert + downscale + analyze + save
+      if(rec && rec.duplicate){                     // already in the library (or a double-drop) — drop this card
+        const i = items.indexOf(item); if(i>=0) items.splice(i,1);
+        delete pending[id]; render();
+        continue;
+      }
       Object.assign(item, rec);
       item.dataURL = "";                            // disk serves the converted original now
       delete pending[id];
