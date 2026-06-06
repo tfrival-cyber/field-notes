@@ -13,7 +13,7 @@ it came from. everything lives on your own disk. no account, no cloud, no upload
   <em>references, folded into single-sheet mini-zines</em>
 </p>
 
-> 🎬 **watch the 60-second demo:** [instagram reel →](INSTAGRAM_REEL_LINK_HERE)
+> 🎬 **watch the 60-second demo:** [instagram reel →](https://www.instagram.com/p/DZKyrzPiPD6/)
 
 ---
 
